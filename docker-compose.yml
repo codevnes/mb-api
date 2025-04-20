@@ -23,7 +23,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-secure.entrypoints=websecure"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.yourdomain.com`)"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${DOMAIN:-yourdomain.com}`)"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$1UqatzJ6$$Ykb/QYEa.YGvMTGPJMq9/."  # admin:password (htpasswd -nb admin password)
@@ -35,26 +35,28 @@ services:
       dockerfile: Dockerfile
     container_name: mb-api
     restart: unless-stopped
+    env_file:
+      - .env.production
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/mbbank.db
       - PORT=3000
-      - PREFER_OCR_METHOD=default
-      - SAVE_WASM=true
     volumes:
       - ./data:/app/data
     networks:
       - mb_network
+    depends_on:
+      - traefik
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mb-api.entrypoints=websecure"
-      - "traefik.http.routers.mb-api.rule=Host(`api.yourdomain.com`)"
+      - "traefik.http.routers.mb-api.rule=Host(`api.${DOMAIN:-yourdomain.com}`)"
       - "traefik.http.routers.mb-api.tls=true"
       - "traefik.http.routers.mb-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.mb-api.loadbalancer.server.port=3000"
-      # Thêm middleware để bảo vệ API (tùy chọn)
-      - "traefik.http.middlewares.mb-api-auth.basicauth.users=apiuser:$$apr1$$q8eZFHjF$$Fvmkk0Ev3hWvMXJKUjLys1"  # apiuser:apipassword
-      - "traefik.http.routers.mb-api.middlewares=mb-api-auth"
+      # Bỏ comment dòng dưới nếu muốn bảo vệ API bằng Basic Auth
+      # - "traefik.http.middlewares.mb-api-auth.basicauth.users=apiuser:$$apr1$$q8eZFHjF$$Fvmkk0Ev3hWvMXJKUjLys1"
+      # - "traefik.http.routers.mb-api.middlewares=mb-api-auth"
 
 networks:
   mb_network:

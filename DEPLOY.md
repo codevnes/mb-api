@@ -10,50 +10,52 @@ Tài liệu này hướng dẫn cách triển khai MB Bank API sử dụng Docke
 
 ## Các bước triển khai
 
-### 1. Chuẩn bị môi trường
+### 1. Thiết lập môi trường
 
-Trước khi triển khai, bạn cần cập nhật một số thông tin trong các file cấu hình:
-
-#### Trong file `docker-compose.yml`:
-
-- Thay đổi `traefik.yourdomain.com` thành tên miền bạn muốn sử dụng cho dashboard Traefik
-- Thay đổi `api.yourdomain.com` thành tên miền bạn muốn sử dụng cho API
-- Cập nhật thông tin xác thực (nếu cần)
-
-#### Trong file `traefik/config/traefik.yml`:
-
-- Thay đổi `your-email@example.com` thành địa chỉ email của bạn (dùng cho Let's Encrypt)
-
-### 2. Thiết lập quyền cho file acme.json
+Chạy script thiết lập môi trường để tạo các thư mục và file cấu hình cần thiết:
 
 ```bash
-# Tạo thư mục data nếu chưa tồn tại
-mkdir -p ./data
-
-# Tạo file acme.json cho Let's Encrypt và thiết lập quyền
-touch ./traefik/data/acme.json
-chmod 600 ./traefik/data/acme.json
+chmod +x setup-env.sh
+./setup-env.sh
 ```
 
-### 3. Cấp quyền thực thi cho script khởi động
+### 2. Thiết lập tên miền
+
+Sử dụng script `set-domain.sh` để cấu hình tên miền cho dịch vụ:
+
+```bash
+chmod +x set-domain.sh
+./set-domain.sh yourdomain.com
+```
+
+Thay `yourdomain.com` bằng tên miền thực tế của bạn.
+
+### 3. Cập nhật thông tin email trong file cấu hình Traefik
+
+Mở file `traefik/config/traefik.yml` và cập nhật địa chỉ email cho Let's Encrypt:
+
+```yaml
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: your-email@example.com  # Thay đổi thành email của bạn
+```
+
+### 4. Khởi tạo cơ sở dữ liệu (nếu cần)
+
+```bash
+chmod +x init-db.sh
+./init-db.sh
+```
+
+### 5. Khởi động dịch vụ
 
 ```bash
 chmod +x start.sh
-```
-
-### 4. Khởi động dịch vụ
-
-```bash
 ./start.sh
 ```
 
-Hoặc sử dụng Docker Compose trực tiếp:
-
-```bash
-docker-compose up -d
-```
-
-### 5. Kiểm tra trạng thái
+### 6. Kiểm tra trạng thái
 
 ```bash
 docker-compose ps
@@ -76,16 +78,27 @@ docker-compose down
 ### Khởi động lại dịch vụ
 
 ```bash
-docker-compose restart
+chmod +x restart.sh
+./restart.sh
 ```
 
 ### Cập nhật dịch vụ
 
 ```bash
-git pull
-docker-compose down
-docker-compose up -d --build
+chmod +x update.sh
+./update.sh
 ```
+
+## Tạo mật khẩu cho Basic Auth
+
+Để bảo vệ API hoặc Traefik Dashboard, bạn có thể tạo mật khẩu mã hóa:
+
+```bash
+chmod +x create-password.sh
+./create-password.sh
+```
+
+Sau đó, cập nhật mật khẩu trong file `docker-compose.yml`.
 
 ## Truy cập dịch vụ
 
@@ -121,5 +134,23 @@ Nếu API không hoạt động:
    docker-compose logs mb-api
    ```
 
-2. Đảm bảo cơ sở dữ liệu đã được khởi tạo đúng cách
+2. Đảm bảo cơ sở dữ liệu đã được khởi tạo đúng cách:
+   ```bash
+   ./init-db.sh
+   ```
+
 3. Kiểm tra các biến môi trường trong file `.env.production`
+
+### Vấn đề với Docker build
+
+Nếu gặp lỗi khi build Docker image:
+
+1. Xóa file pnpm-lock.yaml nếu có:
+   ```bash
+   rm -f pnpm-lock.yaml
+   ```
+
+2. Xây dựng lại image:
+   ```bash
+   docker-compose build --no-cache mb-api
+   ```

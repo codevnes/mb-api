@@ -9,6 +9,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: mb-api:latest
     container_name: mb-api
     restart: unless-stopped
     env_file:
@@ -18,7 +19,7 @@ services:
       - DATABASE_URL=file:/app/data/mbbank.db
       - PORT=3000
     volumes:
-      - ./data:/app/data
+      - ./data:/app/data:rw
     networks:
       - traefik_web
     labels:

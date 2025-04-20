@@ -15,6 +15,9 @@ COPY package.json ./
 # Cài đặt các phụ thuộc
 RUN pnpm install
 
+# Cài đặt TypeScript toàn cục
+RUN npm install -g typescript
+
 # Sao chép mã nguồn
 COPY . .
 
@@ -22,7 +25,7 @@ COPY . .
 RUN pnpm add prisma @prisma/client better-sqlite3 sqlite3
 
 # Biên dịch TypeScript (bỏ qua lỗi)
-RUN pnpm prisma generate && tsc --skipLibCheck
+RUN pnpm prisma generate && pnpm exec tsc --skipLibCheck
 
 # Tạo thư mục data
 RUN mkdir -p /app/data

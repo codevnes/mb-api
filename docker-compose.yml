@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Traefik - Reverse Proxy với SSL tự động
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik_mb
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/data:/data
+      - ./traefik/config/traefik.yml:/traefik.yml:ro
+      - ./traefik/config/config.yml:/config.yml:ro
+      - ./traefik/certs:/certs
+    networks:
+      - mb_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.yourdomain.com`)"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$1UqatzJ6$$Ykb/QYEa.YGvMTGPJMq9/."  # admin:password (htpasswd -nb admin password)
+
+  # MB Bank API
+  mb-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mb-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/mbbank.db
+      - PORT=3000
+      - PREFER_OCR_METHOD=default
+      - SAVE_WASM=true
+    volumes:
+      - ./data:/app/data
+    networks:
+      - mb_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mb-api.entrypoints=websecure"
+      - "traefik.http.routers.mb-api.rule=Host(`api.yourdomain.com`)"
+      - "traefik.http.routers.mb-api.tls=true"
+      - "traefik.http.routers.mb-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mb-api.loadbalancer.server.port=3000"
+      # Thêm middleware để bảo vệ API (tùy chọn)
+      - "traefik.http.middlewares.mb-api-auth.basicauth.users=apiuser:$$apr1$$q8eZFHjF$$Fvmkk0Ev3hWvMXJKUjLys1"  # apiuser:apipassword
+      - "traefik.http.routers.mb-api.middlewares=mb-api-auth"
+
+networks:
+  mb_network:
+    driver: bridge

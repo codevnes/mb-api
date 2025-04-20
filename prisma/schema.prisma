@@ -1,0 +1,25 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Định nghĩa model Account dựa trên cấu trúc hiện tại
+model Account {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String?
+  status    String   @default("active")
+  token     String?  @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("accounts")
+}

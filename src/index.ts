@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import routes from './routes';
-import { errorHandler } from './middlewares/error.middleware';
+import { registerErrorHandlers } from './middlewares/error.middleware';
 import { rateLimiter } from './middlewares/rate-limit.middleware';
 import { securityHeaders } from './middlewares/security.middleware';
 import { testConnection, initializeDatabase } from './config/database';
@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 
-// Cấu hình JSON parsing với xử lý lỗi
+// Cấu hình JSON parsing
 app.use(express.json({
   limit: '1mb', // Giới hạn kích thước request
   strict: true, // Chỉ chấp nhận mảng và đối tượng
@@ -41,18 +41,6 @@ app.use(express.json({
     }
   }
 }));
-
-// Middleware xử lý lỗi JSON parsing
-app.use(function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
-  if (err instanceof SyntaxError && 'body' in err) {
-    return res.status(400).json({
-      success: false,
-      message: 'Dữ liệu JSON không hợp lệ',
-      error: 'invalid_json_format'
-    });
-  }
-  next(err);
-});
 
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
@@ -83,9 +71,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Xử lý lỗi
-app.use(errorHandler);
-
 // Xử lý route không tồn tại
 app.use((req, res) => {
   res.status(404).json({
@@ -93,6 +78,9 @@ app.use((req, res) => {
     message: 'Không tìm thấy endpoint'
   });
 });
+
+// Đăng ký middleware xử lý lỗi
+registerErrorHandlers(app);
 
 // Khởi động máy chủ
 const startServer = async () => {

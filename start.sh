@@ -2,6 +2,8 @@
 
 # Tạo thư mục data nếu chưa tồn tại
 mkdir -p ./data
+mkdir -p ./traefik/data
+mkdir -p ./traefik/certs
 
 # Tạo file acme.json cho Let's Encrypt và thiết lập quyền
 touch ./traefik/data/acme.json

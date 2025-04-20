@@ -10,13 +10,16 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Sao chép package.json và pnpm-lock.yaml
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
 # Cài đặt các phụ thuộc
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Sao chép mã nguồn
 COPY . .
+
+# Cài đặt Prisma và các phụ thuộc khác
+RUN pnpm add prisma @prisma/client better-sqlite3 sqlite3
 
 # Biên dịch TypeScript
 RUN pnpm build

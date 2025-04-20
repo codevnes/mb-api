@@ -13,7 +13,12 @@ if [ ! -f "./data/mbbank.db" ]; then
         -v "$(pwd)/prisma:/app/prisma" \
         -e DATABASE_URL="file:/app/data/mbbank.db" \
         node:18-alpine \
-        sh -c "cd /app && npm install -g pnpm && pnpm install prisma && npx prisma migrate deploy"
+        sh -c "cd /app && \
+               apk add --no-cache python3 make g++ libc6-compat && \
+               npm install -g pnpm && \
+               pnpm add prisma @prisma/client better-sqlite3 sqlite3 && \
+               npx prisma generate && \
+               npx prisma migrate deploy"
     
     echo "Cơ sở dữ liệu đã được khởi tạo thành công!"
 else

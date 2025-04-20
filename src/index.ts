@@ -23,22 +23,27 @@ app.use(cors());
 app.use(express.json({
   limit: '1mb', // Giới hạn kích thước request
   strict: true, // Chỉ chấp nhận mảng và đối tượng
-  verify: (req, res, buf) => {
+  verify: (req: any, res: any, buf) => {
     try {
       JSON.parse(buf.toString());
     } catch (e) {
-      res.status(400).json({
+      if (res.headersSent) return;
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(400);
+      res.end(JSON.stringify({
         success: false,
         message: 'Dữ liệu JSON không hợp lệ',
         error: 'invalid_json_format'
-      });
+      }));
+      
       throw new Error('Dữ liệu JSON không hợp lệ');
     }
   }
 }));
 
 // Middleware xử lý lỗi JSON parsing
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use(function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
   if (err instanceof SyntaxError && 'body' in err) {
     return res.status(400).json({
       success: false,

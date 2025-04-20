@@ -2,20 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { AccountModel } from '../models/account.model';
 import { UnauthorizedError, BadRequestError } from '../utils/error.utils';
 
+import { Account } from '../models/account.model';
+
 // Mở rộng interface của Request để thêm đối tượng account với kiểu dữ liệu rõ ràng
 declare global {
   namespace Express {
     interface Request {
-      account?: {
-        id?: number;
-        username: string;
-        name?: string;
-        status: string;
-        token: string;
-        password?: string;
-        created_at?: Date;
-        updated_at?: Date;
-      };
+      account?: Account;
     }
   }
 }
@@ -87,8 +80,14 @@ export const authenticateToken = async (
       throw new UnauthorizedError(`Tài khoản ${account.status === 'locked' ? 'đã bị khóa' : 'không hoạt động'}`);
     }
     
+    // Đảm bảo status luôn là string không phải undefined
+    const accountWithStatus: Account = {
+      ...account,
+      status: account.status || 'active'
+    };
+    
     // Gắn thông tin tài khoản vào request để sử dụng ở các middleware hoặc controller tiếp theo
-    req.account = account;
+    req.account = accountWithStatus;
     
     next();
   } catch (error) {

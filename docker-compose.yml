@@ -1,32 +1,8 @@
 version: '3.8'
 
 services:
-  # Traefik - Reverse Proxy với SSL tự động
-  traefik:
-    image: traefik:v2.10
-    container_name: traefik_mb
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/data:/data
-      - ./traefik/config/traefik.yml:/traefik.yml:ro
-      - ./traefik/config/config.yml:/config.yml:ro
-      - ./traefik/certs:/certs
-    networks:
-      - mb_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${DOMAIN:-yourdomain.com}`)"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$1UqatzJ6$$Ykb/QYEa.YGvMTGPJMq9/."  # admin:password (htpasswd -nb admin password)
+  # Chỉ sử dụng dịch vụ mb-api, không khởi động Traefik mới
+  # Traefik đã được khởi động từ trước (container ID: be0deaa974e2)
 
   # MB Bank API
   mb-api:
@@ -44,9 +20,7 @@ services:
     volumes:
       - ./data:/app/data
     networks:
-      - mb_network
-    depends_on:
-      - traefik
+      - traefik_web
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mb-api.entrypoints=websecure"
@@ -59,5 +33,5 @@ services:
       # - "traefik.http.routers.mb-api.middlewares=mb-api-auth"
 
 networks:
-  mb_network:
-    driver: bridge
+  traefik_web:
+    external: true
